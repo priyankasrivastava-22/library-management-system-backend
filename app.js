@@ -1,80 +1,113 @@
 require("dotenv").config();
+console.log("DB PASS:", process.env.DB_PASS);
+
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2");
 const multer = require("multer");
 const csv = require("csv-parser");
 const fs = require("fs");
-const bodyParser = require("body-parser");
 
-// Routes (if you have separate route files, you can keep them)
+// CREATE APP 
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// DB
+const db = require("./config/db");
+
+// ================= MIDDLEWARE =================
+app.use(cors());
+app.use(express.json());   
+
+// ================= ROUTES =================
 const authRoutes = require("./routes/auth");
 const bookRoutes = require("./routes/books");
 const transactionRoutes = require("./routes/transactions");
 const statsRoutes = require("./routes/stats");
 const usersRoutes = require("./routes/users");
 
-const app = express();
-const PORT = process.env.PORT || 3001;
-
-// Middlewares
-app.use(cors({ origin: ["http://localhost:3002", "http://localhost:3001"], credentials: true }));
-app.use(bodyParser.json());
-app.use(express.json());
-
-// MySQL connection
-const db = mysql.createConnection({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASS || "your_password",
-  database: process.env.DB_NAME || "lms_db"
+app.get("/ping", (req, res) => {
+  console.log("ping hit");
+  res.json({ message: "pong" });
 });
 
-db.connect(err => {
-  if (err) {
-    console.error("❌ Database connection failed:", err.message);
-    process.exit(1);
+app.get("/test-db", async (req, res) => {
+  console.log("test-db hit");
+
+  try {
+    const [rows] = await db.query("SELECT 1");
+    res.json({ message: "DB working" });
+  } catch (err) {
+    console.error("DB ERROR:", err);
+    res.status(500).json(err);
   }
-  console.log("✅ Connected to MySQL database!");
 });
 
-// Make db accessible in req
-app.use((req, res, next) => {
-  req.db = db;
-  next();
+// ================= TEST ROUTE =================
+app.get("/", (req, res) => {
+  res.send("Library backend is running!");
 });
 
-// Test route
-app.get("/", (req, res) => res.send("Library backend is running!"));
-
-// API routes
+// ================= API ROUTES =================
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/users", usersRoutes);
 
-// Multer for CSV upload
+// ================= CSV UPLOAD =================
 const upload = multer({ dest: "uploads/" });
 
-// Example: bulk upload books
-app.post("/api/upload/books", upload.single("file"), (req, res) => {
-  const rows = [];
-  fs.createReadStream(req.file.path)
-    .pipe(csv())
-    .on("data", data => rows.push(data))
-    .on("end", () => {
-      rows.forEach(row => {
-        const { section_id, category_id, title, author, publisher, stock, review, approved } = row;
-        const query = "INSERT INTO books (section_id, category_id, title, author, publisher, stock, review, approved) VALUES (?,?,?,?,?,?,?,?)";
-        db.query(query, [section_id, category_id, title, author, publisher, stock, review, approved || 0]);
+app.post("/api/upload/books", upload.single("file"), async (req, res) => {
+  try {
+    const rows = [];
+
+    fs.createReadStream(req.file.path)
+      .pipe(csv())
+      .on("data", (data) => rows.push(data))
+      .on("end", async () => {
+        for (const row of rows) {
+          const {
+            section_id,
+            category_id,
+            title,
+            author,
+            publisher,
+            stock,
+            review,
+            approved,
+          } = row;
+
+          await db.query(
+            `INSERT INTO books 
+            (section_id, category_id, title, author, publisher, stock, review, approved)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              section_id,
+              category_id,
+              title,
+              author,
+              publisher,
+              stock,
+              review || "",
+              approved || 0,
+            ]
+          );
+        }
+
+        fs.unlinkSync(req.file.path);
+        res.json({ message: "Books uploaded successfully" });
       });
-      fs.unlinkSync(req.file.path);
-      res.send("Books uploaded successfully!");
-    });
+  } catch (err) {
+    console.error("CSV upload error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Start server
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// ================= START SERVER =================
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
 
-module.exports = db;
+app.get("/ping", (req, res) => {
+  res.json({ message: "pong" });
+});
