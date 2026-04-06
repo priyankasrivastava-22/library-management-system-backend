@@ -4,81 +4,168 @@ const MAX_BOOKS = 6;
 const FINE_PER_DAY = 5;
 
 // Issue a book
-exports.issueBook = (req, res) => {
-    const { userId, bookId } = req.body;
+exports.issueBook = async (req, res) => {
+  const { userId, bookId, adminId } = req.body;
 
-    // Check user cart limit
-    const checkSql = `
-    SELECT COUNT(*) AS count 
-    FROM transactions 
-    WHERE user_id=? AND type='Issue' 
-      AND id NOT IN (SELECT id FROM transactions WHERE type='Return')`;
+  try {
+    // checking if book exists and stock is available
+    const [book] = await db.query("SELECT stock FROM books WHERE id=?", [bookId]);
 
-    db.query(checkSql, [userId], (err, result) => {
-        if (err) return res.status(500).json({ error: err });
+    if (book.length === 0) {
+      return res.status(404).json({ error: "Book not found" });
+    }
 
-        if (result[0].count >= MAX_BOOKS)
-            return res.status(400).json({ error: "Cart limit exceeded. Only 6 books allowed." });
+    if (book[0].stock <= 0) {
+      return res.status(400).json({ error: "Out of stock" });
+    }
 
-        // Check stock
-        const bookSql = "SELECT quantity FROM books WHERE id=?";
-        db.query(bookSql, [bookId], (err2, bookResult) => {
-            if (err2) return res.status(500).json({ error: err2 });
-            if (!bookResult.length) return res.status(404).json({ error: "Book not found" });
-            if (bookResult[0].quantity <= 0) return res.status(400).json({ error: "Book out of stock" });
+    // calculating return date (7 days from issue date)
+    const issueDate = new Date();
+    const returnDate = new Date();
+    returnDate.setDate(issueDate.getDate() + 7);
 
-            // Issue book
-            const issueSql = "INSERT INTO transactions (user_id, book_id, type) VALUES (?,?, 'Issue')";
-            db.query(issueSql, [userId, bookId], (err3) => {
-                if (err3) return res.status(500).json({ error: err3 });
+    // inserting transaction record
+    await db.query(
+      `INSERT INTO transactions 
+       (user_id, book_id, admin_id, issued_at, return_date, status) 
+       VALUES (?, ?, ?, NOW(), ?, 'issued')`,
+      [userId, bookId, adminId, returnDate]
+    );
 
-                // Reduce stock
-                db.query("UPDATE books SET quantity=quantity-1 WHERE id=?", [bookId], (err4) => {
-                    if (err4) return res.status(500).json({ error: err4 });
-                    res.json({ message: "Book issued successfully!" });
-                });
-            });
-        });
-    });
+    // reducing book stock
+    await db.query("UPDATE books SET stock = stock - 1 WHERE id=?", [bookId]);
+
+    res.json({ message: "Book issued successfully", returnDate });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 // Return a book
-exports.returnBook = (req, res) => {
-    const { userId, bookId } = req.body;
+exports.returnBook = async (req, res) => {
+  const { userId, bookId } = req.body;
 
-    const findSql = "SELECT * FROM transactions WHERE user_id=? AND book_id=? AND type='Issue' ORDER BY transaction_date DESC LIMIT 1";
-    db.query(findSql, [userId, bookId], (err, result) => {
-        if (err) return res.status(500).json({ error: err });
-        if (!result.length) return res.status(400).json({ error: "No such issued book found" });
+  try {
+    // getting latest issued transaction
+    const [rows] = await db.query(`
+      SELECT * FROM transactions 
+      WHERE user_id=? AND book_id=? AND status='issued'
+      ORDER BY issued_at DESC LIMIT 1
+    `, [userId, bookId]);
 
-        const issueDate = new Date(result[0].transaction_date);
-        const returnDate = new Date();
-        const diffDays = Math.ceil((returnDate - issueDate) / (1000 * 60 * 60 * 24));
-        const fine = diffDays > 0 ? diffDays * FINE_PER_DAY : 0;
+    if (rows.length === 0) {
+      return res.status(400).json({ error: "No active issue found" });
+    }
 
-        const returnSql = "INSERT INTO transactions (user_id, book_id, type) VALUES (?,?, 'Return')";
-        db.query(returnSql, [userId, bookId], (err2) => {
-            if (err2) return res.status(500).json({ error: err2 });
+    const transaction = rows[0];
 
-            db.query("UPDATE books SET quantity=quantity+1 WHERE id=?", [bookId], (err3) => {
-                if (err3) return res.status(500).json({ error: err3 });
-                res.json({ message: "Book returned successfully!", fine, daysLate: diffDays });
-            });
-        });
-    });
+    const today = new Date();
+    const returnDate = new Date(transaction.return_date);
+
+    let fine = 0;
+    let status = "returned";
+
+    // calculating fine if late
+    if (today > returnDate) {
+      const diffDays = Math.ceil((today - returnDate) / (1000 * 60 * 60 * 24));
+      fine = diffDays * FINE_PER_DAY;
+      status = "late";
+    }
+
+    // updating transaction
+    await db.query(`
+      UPDATE transactions 
+      SET actual_return_date = NOW(), fine_amount = ?, status = ?
+      WHERE id=?
+    `, [fine, status, transaction.id]);
+
+    // increasing book stock
+    await db.query("UPDATE books SET stock = stock + 1 WHERE id=?", [bookId]);
+
+    res.json({ message: "Book returned", fine, status });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// Get transactions for a user
-exports.getUserTransactions = (req, res) => {
-    const { userId } = req.params;
-    const sql = `
-    SELECT t.id, b.title, b.author, b.genre, t.type, t.transaction_date
-    FROM transactions t
-    JOIN books b ON t.book_id = b.id
-    WHERE t.user_id=?
-    ORDER BY t.transaction_date DESC`;
-    db.query(sql, [userId], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json(results);
-    });
+// Get all transactions (for admin dashboard)
+exports.getAllTransactions = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        t.id,
+        u.name AS student_name,
+        b.id AS book_id,
+        b.title,
+        b.author,
+        t.issued_at,
+        t.return_date,
+        t.actual_return_date,
+        t.status,
+        t.fine_amount,
+        t.review,
+        a.name AS admin_name
+      FROM transactions t
+      JOIN users u ON t.user_id = u.id
+      JOIN books b ON t.book_id = b.id
+      LEFT JOIN admins a ON t.admin_id = a.id
+      ORDER BY t.issued_at DESC
+    `);
+
+    res.json(rows);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get transactions for a specific user (for student frontend "My Books")
+exports.getUserTransactions = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // fetching all books issued to a user
+    const [rows] = await db.query(`
+      SELECT 
+        t.id,
+        b.title,
+        b.author,
+        t.issued_at,
+        t.return_date,
+        t.actual_return_date,
+        t.status,
+        t.fine_amount,
+        t.review
+      FROM transactions t
+      JOIN books b ON t.book_id = b.id
+      WHERE t.user_id=?
+      ORDER BY t.issued_at DESC
+    `, [userId]);
+
+    res.json(rows);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Add review for a transaction (student gives review)
+exports.addReview = async (req, res) => {
+  const { id } = req.params;
+  const { review } = req.body;
+
+  try {
+    // updating review for a transaction
+    await db.query(
+      "UPDATE transactions SET review=? WHERE id=?",
+      [review, id]
+    );
+
+    res.json({ message: "Review added successfully" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

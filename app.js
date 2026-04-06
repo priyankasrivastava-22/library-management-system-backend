@@ -24,6 +24,7 @@ const bookRoutes = require("./routes/books");
 const transactionRoutes = require("./routes/transactions");
 const statsRoutes = require("./routes/stats");
 const usersRoutes = require("./routes/users");
+const dashboardRoutes = require("./routes/dashboard");
 
 app.get("/ping", (req, res) => {
   console.log("ping hit");
@@ -53,6 +54,7 @@ app.use("/api/books", bookRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // ================= CSV UPLOAD =================
 const upload = multer({ dest: "uploads/" });
