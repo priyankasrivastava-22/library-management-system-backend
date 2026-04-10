@@ -1,59 +1,34 @@
-// const express = require("express");
-// const router = express.Router();
-// const db = require("../config/db");
-// const bookController = require("../controllers/bookController");
-
-// // get all books
-// router.get("/", bookController.getBooks);
-
-// // add book
-// router.post("/", bookController.addBook);
-
-// // delete book
-// router.delete("/:id", bookController.deleteBook);
-
-// // get all sections
-// router.get("/sections", async (req, res) => {
-//   try {
-//     const [rows] = await db.query("SELECT * FROM sections");
-//     res.json(rows);
-//   } catch (err) {
-//     console.error("Sections API Error:", err);
-//     res.status(500).json({ message: err.message });
-//   }
-// });
-
-// // get all categories
-// router.get("/categories", async (req, res) => {
-//   try {
-//     const [rows] = await db.query("SELECT * FROM categories");
-//     res.json(rows);
-//   } catch (err) {
-//     console.error("Categories API Error:", err);
-//     res.status(500).json({ message: err.message });
-//   }
-// });
-
-// module.exports = router;
-
-
-
-
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// 1. Get all books
+// 1. Get all books - UPDATED for Student Frontend compatibility
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM books');
+        /**
+         * Used  LEFT JOIN to fetch the human-readable names of sections and categories.
+         * 'b.*' ensures the Admin Dashboard still gets all the original ID fields it expects.
+         * 's.name AS section' allows the Student Frontend to filter by "Fiction", "Study", etc.
+         */
+        const [rows] = await db.query(`
+            SELECT 
+                b.*, 
+                s.name AS section, 
+                c.name AS category 
+            FROM books b
+            LEFT JOIN sections s ON b.section_id = s.id
+            LEFT JOIN categories c ON b.category_id = c.id
+            ORDER BY b.id DESC
+        `);
         res.json(rows);
     } catch (err) {
+        // Detailed error logging helps if the database connection drops
+        console.error("GET /api/books Error:", err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// 2. Add a new book
+// 2. Add a new book - (Kept exactly as is for Admin Dashboard)
 router.post('/', async (req, res) => {
     const { title, author, publisher, stock, section_id, category_id } = req.body;
     try {
@@ -67,7 +42,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-// 3. Delete a book (This was likely where the line 13 error occurred)
+// 3. Delete a book - (Kept exactly as is for Admin Dashboard)
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
