@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 // using secret for token (later move to .env)
 const JWT_SECRET = "your_jwt_secret_key";
 
-
 // ================= REGISTER =================
 exports.register = async (req, res) => {
 
@@ -55,8 +54,6 @@ exports.register = async (req, res) => {
         });
     }
 };
-
-
 
 // ================= LOGIN =================
 exports.login = async (req, res) => {
@@ -136,8 +133,6 @@ exports.login = async (req, res) => {
         });
     }
 };
-
-
 
 // ================= PROFILE =================
 exports.getProfile = async (req, res) => {
