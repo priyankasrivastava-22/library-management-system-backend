@@ -48,13 +48,33 @@
 
 ```
 library-management-system-backend/
-├── config/                 # Database connection setup
+│
+├── config/
+│ └── db.js                          # Database connection setup
+│
 ├── controllers/
+│ ├── authController.js
+│ ├── bookController.js
+│ ├── transactionController.js
+│ ├── adminController.js
+│ ├── complaintController.js
+│ ├── feedbackController.js
+│
 ├── routes/
-├── app.js                  # Main server file
+│ ├── auth.js
+│ ├── books.js
+│ ├── transactions.js
+│ ├── users.js
+│ ├── stats.js
+│ ├── admin.js
+│ ├── complaints.js
+│ ├── feedback.js
+│ ├── dashboard.js
+│
+├── app.js # Main server file
 ├── package.json
 ├── package-lock.json
-├── .env                    # Environment variables (ignored in Git)
+├── .env                           # Environment variables (ignored in Git)
 └── .gitignore
 ```
 
@@ -64,12 +84,12 @@ library-management-system-backend/
 
 ## 4. Setup Instructions
 
-### 4.1. Install dependencies
+#### 4.1. Install dependencies
 ```bash
 npm install
 ```
 
-### 4.2. Create `.env` file
+#### 4.2. Create `.env` file
 
 ```env
 PORT=5000
@@ -84,15 +104,12 @@ DB_NAME=lms_db
 JWT_SECRET=your_secret_key
 ```
 
----
-
-### 4.3. Start server
+#### 4.3. Start server
 ```bash
 npm start
 ```
 
-
-### 4️.4. Server runs on
+#### 4️.4. Server runs on
 ```
 http://localhost:5000
 ```
@@ -162,4 +179,3 @@ MCA Student | Software Engineer | DevOps Enthusiast
 
 ##  11. License
 MIT License
-```
