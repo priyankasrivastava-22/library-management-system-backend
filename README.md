@@ -5,7 +5,7 @@
 
 ---
 
-## Features
+## 1. Features
 
 ### Authentication
 - User Registration
@@ -18,7 +18,7 @@
 - Delete books
 - Section & category mapping
 
-### 🔄 Transactions
+### Transactions
 - Issue books
 - Return books
 - Track issued books
@@ -34,7 +34,7 @@
 
 ---
 
-## Tech Stack
+## 2. Tech Stack
 
 - Node.js
 - Express.js
@@ -44,7 +44,7 @@
 
 ---
 
-## Project Structure (Actual)
+## 3. Project Structure (Actual)
 
 ```
 library-management-system-backend/
@@ -56,19 +56,20 @@ library-management-system-backend/
 ├── package-lock.json
 ├── .env                    # Environment variables (ignored in Git)
 └── .gitignore
-``
+```
 
 ---
 
-## Setup Instructions
 
-### 1. Install dependencies
+
+## 4. Setup Instructions
+
+### 4.1. Install dependencies
 ```bash
 npm install
 ```
 
-
-### 2.Create `.env` file
+### 4.2. Create `.env` file
 
 ```env
 PORT=5000
@@ -85,40 +86,40 @@ JWT_SECRET=your_secret_key
 
 ---
 
-### 3. Start server
+### 4.3. Start server
 ```bash
 npm start
 ```
 
 
-### 4️⃣ Server runs on
+### 4️.4. Server runs on
 ```
 http://localhost:5000
 ```
 
 ---
 
-##  API Endpoints (Sample)
+## 5. API Endpoints (Sample)
 
-### Auth
+#### Auth
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 
-### Books
+#### Books
 - `GET /api/books`
 - `POST /api/books`
 - `DELETE /api/books/:id`
 
-### Transactions
+#### Transactions
 - `POST /api/transactions/issue`
 - `POST /api/transactions/return`
 
-### Users
+#### Users
 - `GET /api/users`
 
 ---
 
-##  Business Logic
+##  6. Business Logic
 
 - Max **5 books per user**
 - Return date = **7 days from issue**
@@ -127,7 +128,7 @@ http://localhost:5000
 
 ---
 
-##  Authentication
+## 7.  Authentication
 
 - JWT-based authentication
 - Token generated on login
@@ -135,7 +136,7 @@ http://localhost:5000
 
 ---
 
-## Important Notes
+## 8. Important Notes
 
 - `.env` file is not included in the repository (security reasons)
 - Make sure MySQL server is running
@@ -143,7 +144,7 @@ http://localhost:5000
 
 ---
 
-## Future Enhancements
+## 9. Future Enhancements
 
 - Role-based access middleware
 - Docker containerization
@@ -152,13 +153,13 @@ http://localhost:5000
 
 ---
 
-## Author
+## 10. Author
 
 Priyanka Srivastava  
 MCA Student | Software Engineer | DevOps Enthusiast
 
 ---
 
-##  License
+##  11. License
 MIT License
 ```
