@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// 1. Get all books - UPDATED for Student Frontend compatibility
+// 1. Get books - Simplified (Pagination Removed)
 router.get('/', async (req, res) => {
     try {
         /**
-         * Used  LEFT JOIN to fetch the human-readable names of sections and categories.
-         * 'b.*' ensures the Admin Dashboard still gets all the original ID fields it expects.
-         * 's.name AS section' allows the Student Frontend to filter by "Fiction", "Study", etc.
+         * SQL logic: 
+         * 1. We removed LIMIT and OFFSET to return every book in the database.
+         * 2. LEFT JOIN is still used so the frontend can see section and category names.
          */
         const [rows] = await db.query(`
             SELECT 
@@ -20,15 +20,20 @@ router.get('/', async (req, res) => {
             LEFT JOIN categories c ON b.category_id = c.id
             ORDER BY b.id DESC
         `);
-        res.json(rows);
+
+        // We still wrap the result in an object { books: rows } 
+        // so your frontend code (.then(data => data.books)) stays working.
+        res.json({
+            books: rows,
+            totalBooks: rows.length
+        });
     } catch (err) {
-        // Detailed error logging helps if the database connection drops
         console.error("GET /api/books Error:", err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// 2. Add a new book - (Kept exactly as is for Admin Dashboard)
+// 2. Add a new book - (Kept exactly as is)
 router.post('/', async (req, res) => {
     const { title, author, publisher, stock, section_id, category_id } = req.body;
     try {
@@ -42,7 +47,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-// 3. Delete a book - (Kept exactly as is for Admin Dashboard)
+// 3. Delete a book - (Kept exactly as is)
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
