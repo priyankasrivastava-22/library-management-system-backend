@@ -7,7 +7,7 @@ router.get('/', async (req, res) => {
     try {
         /**
          * SQL logic: 
-         * 1. We removed LIMIT and OFFSET to return every book in the database.
+         * removed LIMIT and OFFSET to return every book in the database.
          * 2. LEFT JOIN is still used so the frontend can see section and category names.
          */
         const [rows] = await db.query(`
@@ -21,8 +21,8 @@ router.get('/', async (req, res) => {
             ORDER BY b.id DESC
         `);
 
-        // We still wrap the result in an object { books: rows } 
-        // so your frontend code (.then(data => data.books)) stays working.
+        // wrap the result in an object { books: rows } 
+        // so frontend code (.then(data => data.books)) stays working.
         res.json({
             books: rows,
             totalBooks: rows.length
