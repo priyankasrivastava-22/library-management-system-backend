@@ -17,8 +17,6 @@
 
 
 const mysql = require("mysql2/promise");
-const fs = require("fs"); // Added to read the certificate file
-const path = require("path");
 require("dotenv").config();
 
 const db = mysql.createPool({
@@ -26,13 +24,12 @@ const db = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 12345, // Aiven uses a specific port, not 3306
+  port: process.env.DB_PORT || 12345,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   ssl: {
-    // This tells MySQL to use the Aiven CA certificate
-    ca: fs.readFileSync(path.join(__dirname, "ca.pem")),
+    rejectUnauthorized: false,
   },
 });
 
