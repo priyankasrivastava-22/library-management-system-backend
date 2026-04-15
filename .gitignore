@@ -22,3 +22,5 @@ Thumbs.db
 # Optional (if added later)
 uploads/
 temp/
+
+config/ca.pem
