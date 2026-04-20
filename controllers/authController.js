@@ -170,3 +170,85 @@ exports.getProfile = async (req, res) => {
         });
     }
 };
+
+// ================= UPDATE EMAIL =================
+exports.updateEmail = async (req, res) => {
+
+    const { userId, email } = req.body;
+
+    // validation
+    if (!userId || !email) {
+        return res.status(400).json({
+            success: false,
+            message: "UserId and email are required"
+        });
+    }
+
+    try {
+        // check if email already exists
+        const [existing] = await db.query(
+            "SELECT * FROM users WHERE email = ?",
+            [email]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Email already in use"
+            });
+        }
+
+        // update email
+        await db.query(
+            "UPDATE users SET email = ? WHERE id = ?",
+            [email, userId]
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Email updated successfully"
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Database error",
+            error: err.message
+        });
+    }
+};
+
+
+// ================= UPDATE PASSWORD =================
+exports.updatePassword = async (req, res) => {
+
+    const { userId, password } = req.body;
+
+    // validation
+    if (!userId || !password) {
+        return res.status(400).json({
+            success: false,
+            message: "UserId and password are required"
+        });
+    }
+
+    try {
+        // update password (plain text for now)
+        await db.query(
+            "UPDATE users SET password = ? WHERE id = ?",
+            [password, userId]
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Password updated successfully"
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Database error",
+            error: err.message
+        });
+    }
+};

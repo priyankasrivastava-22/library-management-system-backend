@@ -1,6 +1,7 @@
 // backend/routes/users.js
 const router = require("express").Router();
 const db = require("../config/db");
+const { updateEmail, updatePassword } = require("../controllers/authController");
 
 router.get("/", async (_req, res) => {
   try {
@@ -13,5 +14,8 @@ router.get("/", async (_req, res) => {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
+
+router.put("/update-email", updateEmail);
+router.put("/update-password", updatePassword)
 
 module.exports = router;
