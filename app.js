@@ -27,6 +27,8 @@ const transactionRoutes = require("./routes/transactions");
 const statsRoutes = require("./routes/stats");
 const usersRoutes = require("./routes/users");
 const dashboardRoutes = require("./routes/dashboard");
+const complaintRoutes = require("./routes/complaint");
+const feedbackRoutes = require("./routes/feedback");
 const adminRoutes = require("./routes/admin"); // For Sections and Categories
 
 // ================= API ROUTES =================
@@ -37,6 +39,8 @@ app.use("/api/stats", statsRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/admin", adminRoutes); 
+app.use("/api/complaints", complaintRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 // ================= UTILITY ROUTES =================
 app.get("/ping", (req, res) => {

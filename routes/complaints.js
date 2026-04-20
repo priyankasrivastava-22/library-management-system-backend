@@ -8,7 +8,7 @@ router.post("/raise", raiseComplaint);
 // Get all complaints of user
 router.get("/:userId", getUserComplaints);
 
-// Admin responds (for simplicity here, just API)
+// Respond to complaint (ADMIN)
 router.post("/respond/:id", respondComplaint);
 
 // Reopen complaint
