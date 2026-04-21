@@ -27,7 +27,7 @@ const transactionRoutes = require("./routes/transactions");
 const statsRoutes = require("./routes/stats");
 const usersRoutes = require("./routes/users");
 const dashboardRoutes = require("./routes/dashboard");
-const complaintRoutes = require("./routes/complaint");
+const complaintRoutes = require("./routes/complaints");
 const feedbackRoutes = require("./routes/feedback");
 const adminRoutes = require("./routes/admin"); // For Sections and Categories
 
