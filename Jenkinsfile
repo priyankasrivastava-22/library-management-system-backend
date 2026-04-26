@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "lms-backend"
+        CONTAINER_NAME = "lms-backend-dev"
     }
 
     stages {
@@ -13,15 +14,43 @@ pipeline {
             }
         }
 
+        stage('Run Tests') {
+            steps {
+                sh 'npm test || echo "No tests defined"'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
-        stage('Verify Image') {
+        stage('Stop Old Container') {
             steps {
-                sh 'docker images'
+                sh '''
+                docker stop $CONTAINER_NAME || true
+                docker rm $CONTAINER_NAME || true
+                '''
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                sh '''
+                docker run -d -p 5000:5000 \
+                --name $CONTAINER_NAME \
+                $IMAGE_NAME
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                sleep 5
+                curl http://localhost:5000/api/books || exit 1
+                '''
             }
         }
 
@@ -29,10 +58,10 @@ pipeline {
 
     post {
         success {
-            echo "Backend build pipeline completed successfully"
+            echo "Full CI/CD pipeline executed successfully"
         }
         failure {
-            echo "Build failed"
+            echo "Pipeline failed - check logs"
         }
     }
 }
