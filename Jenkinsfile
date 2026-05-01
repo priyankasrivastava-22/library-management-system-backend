@@ -5,13 +5,6 @@ pipeline {
         IMAGE_NAME = "lms-backend"
         CONTAINER_NAME = "lms-backend-dev"
         FRONTEND_URL = "https://lms-frontend-dev.onrender.com"   
-
-         DB_HOST = credentials('LMS_DB_HOST')
-         DB_PORT = credentials('LMS_DB_PORT')
-         DB_USER = credentials('LMS_DB_USER')
-         DB_PASS = credentials('LMS_DB_PASS')
-         DB_NAME = credentials('LMS_DB_NAME')
-
     }
 
     stages {
