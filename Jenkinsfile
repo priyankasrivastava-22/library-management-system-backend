@@ -45,28 +45,35 @@ pipeline {
 
         stage('Run New Container') {
             steps {
-                sh '''
-                docker run -d -p 5000:5000 \
-                --name $CONTAINER_NAME \
-                -e DB_HOST=$DB_HOST \
-                -e DB_PORT=$DB_PORT \
-                -e DB_USER=$DB_USER \
-                -e DB_PASS=$DB_PASS \
-                -e DB_NAME=$DB_NAME \
-                -e NODE_ENV=development \
-                $IMAGE_NAME
-                '''
-            }
-        }
-
-        stage('Health Check') {
-            steps {
-                sh '''
-                sleep 5
-                curl -f http://localhost:5000/api/books || exit 1
-                '''
-            }
-        }
+                        withCredentials([
+                            string(credentialsId: 'LMS_DB_HOST', variable: 'DB_HOST'),
+                            string(credentialsId: 'LMS_DB_PORT', variable: 'DB_PORT'),
+                            string(credentialsId: 'LMS_DB_USER', variable: 'DB_USER'),
+                            string(credentialsId: 'LMS_DB_PASS', variable: 'DB_PASS'),
+                            string(credentialsId: 'LMS_DB_NAME', variable: 'DB_NAME')
+                            ]) {
+                                sh '''
+                                docker run -d -p 5000:5000 \
+                                --name $CONTAINER_NAME \
+                                -e DB_HOST=$DB_HOST \
+                                -e DB_PORT=$DB_PORT \
+                                -e DB_USER=$DB_USER \
+                                -e DB_PASS=$DB_PASS \
+                                -e DB_NAME=$DB_NAME \
+                                -e NODE_ENV=development \
+                                $IMAGE_NAME
+                                 '''
+                               }
+                            }
+                        }
+                        stage('Health Check') {
+                            steps {
+                             sh '''
+                             sleep 5
+                             curl -f http://localhost:5000/api/books || exit 1
+                            '''
+                            }
+                      }
 
         stage('Login API Test') {
             steps {
