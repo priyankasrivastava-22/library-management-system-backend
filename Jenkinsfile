@@ -4,7 +4,14 @@ pipeline {
     environment {
         IMAGE_NAME = "lms-backend"
         CONTAINER_NAME = "lms-backend-dev"
-        FRONTEND_URL = "https://lms-frontend-dev.onrender.com"   // CHANGE THIS
+        FRONTEND_URL = "https://lms-frontend-dev.onrender.com"   
+
+         DB_HOST = credentials('LMS_DB_HOST')
+         DB_PORT = credentials('LMS_DB_PORT')
+         DB_USER = credentials('LMS_DB_USER')
+         DB_PASS = credentials('LMS_DB_PASS')
+         DB_NAME = credentials('LMS_DB_NAME')
+}
     }
 
     stages {
@@ -41,6 +48,12 @@ pipeline {
                 sh '''
                 docker run -d -p 5000:5000 \
                 --name $CONTAINER_NAME \
+                -e DB_HOST=$DB_HOST \
+                -e DB_PORT=$DB_PORT \
+                -e DB_USER=$DB_USER \
+                -e DB_PASS=$DB_PASS \
+                -e DB_NAME=$DB_NAME \
+                -e NODE_ENV=development \
                 $IMAGE_NAME
                 '''
             }
