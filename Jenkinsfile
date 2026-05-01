@@ -11,7 +11,7 @@ pipeline {
          DB_USER = credentials('LMS_DB_USER')
          DB_PASS = credentials('LMS_DB_PASS')
          DB_NAME = credentials('LMS_DB_NAME')
-}
+
     }
 
     stages {
