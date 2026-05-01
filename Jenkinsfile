@@ -68,6 +68,20 @@ pipeline {
                             }
                       }
 
+                      stage('Register Test User') {
+    steps {
+        sh '''
+        echo "Registering test user..."
+
+        curl -s -X POST http://localhost:5000/api/auth/register \
+        -H "Content-Type: application/json" \
+        -d '{"name":"Test User","email":"testuser@gmail.com","password":"123456"}'
+
+        echo "User registered"
+        '''
+    }
+}
+
         stage('Login API Test') {
             steps {
                sh '''
