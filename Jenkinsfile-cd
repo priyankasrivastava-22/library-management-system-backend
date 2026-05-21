@@ -1,0 +1,107 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "lms-backend-dev"
+        CONTAINER_NAME = "lms-backend-dev"
+        PORT = "5000"
+    }
+
+    stages {
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                docker build -t $IMAGE_NAME:$BUILD_NUMBER .
+                '''
+            }
+        }
+
+        stage('Stop Old Container') {
+            steps {
+                sh '''
+                docker stop $CONTAINER_NAME || true
+                docker rm $CONTAINER_NAME || true
+                '''
+            }
+        }
+
+        stage('Deploy Backend Container') {
+            steps {
+
+                withCredentials([
+                    string(credentialsId: 'LMS_DB_HOST', variable: 'DB_HOST'),
+                    string(credentialsId: 'LMS_DB_PORT', variable: 'DB_PORT'),
+                    string(credentialsId: 'LMS_DB_USER', variable: 'DB_USER'),
+                    string(credentialsId: 'LMS_DB_PASS', variable: 'DB_PASS'),
+                    string(credentialsId: 'LMS_DB_NAME', variable: 'DB_NAME')
+                ]) {
+
+                    sh '''
+                    docker run -d \
+                    -p 5000:5000 \
+                    --name $CONTAINER_NAME \
+                    -e DB_HOST=$DB_HOST \
+                    -e DB_PORT=$DB_PORT \
+                    -e DB_USER=$DB_USER \
+                    -e DB_PASS=$DB_PASS \
+                    -e DB_NAME=$DB_NAME \
+                    -e NODE_ENV=development \
+                    $IMAGE_NAME:$BUILD_NUMBER
+                    '''
+                }
+            }
+        }
+
+        stage('Backend Health Check') {
+            steps {
+                sh '''
+                sleep 10
+                curl -f http://localhost:5000/api/books || exit 1
+                '''
+            }
+        }
+
+        stage('Register Test User') {
+            steps {
+                sh '''
+                curl -s -X POST http://localhost:5000/api/auth/register \
+                -H "Content-Type: application/json" \
+                -d '{"name":"Test User","email":"testuser@gmail.com","password":"123456"}'
+                '''
+            }
+        }
+
+        stage('Login API Test') {
+            steps {
+                sh '''
+                response=$(curl -s -X POST http://localhost:5000/api/auth/login \
+                -H "Content-Type: application/json" \
+                -d '{"email":"testuser@gmail.com","password":"123456"}')
+
+                echo "$response" | grep "token" || exit 1
+                '''
+            }
+        }
+
+        stage('Backend API Smoke Test') {
+            steps {
+                sh '''
+                curl -f http://localhost:5000/api/books || exit 1
+                curl -f http://localhost:5000/api/stats || exit 1
+                curl -f http://localhost:5000/api/users || exit 1
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Backend DEV CD SUCCESS'
+        }
+
+        failure {
+            echo 'Backend DEV CD FAILED'
+        }
+    }
+}
