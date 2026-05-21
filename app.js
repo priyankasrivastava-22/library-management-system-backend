@@ -52,6 +52,16 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
+
+setInterval(async () => {
+  try {
+    await db.query("SELECT 1");
+    console.log("DB keep-alive OK");
+  } catch (err) {
+    console.error("DB keep-alive failed:", err.message);
+  }
+}, 60000);
+
 // ================= UTILITY ROUTES =================
 app.get("/ping", (req, res) => {
   res.json({ message: "pong" });
