@@ -67,6 +67,10 @@ app.get("/ping", (req, res) => {
   res.json({ message: "pong" });
 });
 
+app.head("/ping", (req, res) => {
+  res.status(200).end();
+});
+
 app.get("/test-db", async (req, res) => {
   try {
     const [rows] = await db.query("SELECT 1");

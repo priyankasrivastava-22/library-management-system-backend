@@ -24,3 +24,6 @@ uploads/
 temp/
 
 config/ca.pem
+
+.lms.sql
+*.sql
