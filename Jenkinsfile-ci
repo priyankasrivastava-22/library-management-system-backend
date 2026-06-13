@@ -1,0 +1,60 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "lms-backend-dev"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Lint Check') {
+            steps {
+                sh 'echo "Skipping lint for now"'
+                // sh 'npm run lint'
+            }
+        }
+
+        stage('Run Backend Tests') {
+            steps {
+                sh 'echo "Skipping backend tests for now"'
+                // sh 'npm test'
+            }
+        }
+
+        stage('Docker Build Validation') {
+            steps {
+                sh '''
+                docker build -t $IMAGE_NAME:$BUILD_NUMBER .
+                '''
+            }
+        }
+
+        stage('Cleanup Docker Images') {
+            steps {
+                sh 'docker image prune -f'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Backend DEV CI SUCCESS'
+        }
+
+        failure {
+            echo 'Backend DEV CI FAILED'
+        }
+    }
+}

@@ -13,11 +13,21 @@ const PORT = process.env.PORT || 5000;
 const db = require("./config/db");
 
 // ================= MIDDLEWARE =================
-app.use(cors({
-  origin: '*', // This allows any website to talk to backend
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
+const allowedOrigins = [
+  "https://library-management-system-lms-frontend.onrender.com",
+  "https://lms-frontend-testing.onrender.com",
+  "https://lms-frontend-dev.onrender.com",
+  "http://localhost:3000",
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());   
 
 // ================= ROUTE IMPORTS =================
@@ -42,9 +52,23 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
+
+setInterval(async () => {
+  try {
+    await db.query("SELECT 1");
+    console.log("DB keep-alive OK");
+  } catch (err) {
+    console.error("DB keep-alive failed:", err.message);
+  }
+}, 60000);
+
 // ================= UTILITY ROUTES =================
 app.get("/ping", (req, res) => {
   res.json({ message: "pong" });
+});
+
+app.head("/ping", (req, res) => {
+  res.status(200).end();
 });
 
 app.get("/test-db", async (req, res) => {
